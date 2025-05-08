@@ -17,11 +17,37 @@ mkdir -p n8n_data
 
 ### 2. Cấu hình môi trường
 
-Tạo file `.env` với nội dung:
+Đầu tiên, sao chép file cấu hình mẫu:
+```bash
+cp .env.example .env
+```
+
+Sau đó, chỉnh sửa file `.env` với nội dung tương tự như sau (điều chỉnh cho phù hợp với môi trường của bạn):
 ```env
-DOMAIN_NAME=your-domain.com
-SUBDOMAIN=n8n
+# Tên miền đầy đủ của n8n (ví dụ: n8n.example.com)
+N8N_HOST=n8n.example.com
+
+# Cổng mà n8n sẽ lắng nghe (phải khớp với docker-compose.yml và proxy_pass của Nginx)
+# N8N_PORT=5678 # Thường được đặt bên trong container, cổng public được quản lý bởi docker-compose
+
+# Giao thức sử dụng (http hoặc https)
+N8N_PROTOCOL=https
+
+# URL đầy đủ cho Webhook callback, được tạo từ N8N_PROTOCOL và N8N_HOST
+WEBHOOK_URL=${N8N_PROTOCOL}://${N8N_HOST}/
+
+# Múi giờ mặc định được sử dụng cho các Cron node
 GENERIC_TIMEZONE=Asia/Ho_Chi_Minh
+
+# Đối với cấu hình cơ sở dữ liệu, SMTP và các cài đặt nâng cao khác,
+# vui lòng tham khảo .env.example và tài liệu chính thức của n8n.
+# Ví dụ cho PostgreSQL (bỏ comment và cấu hình nếu cần):
+# DB_TYPE=postgresdb
+# DB_POSTGRESDB_HOST=host.docker.internal # Hoặc host DB của bạn
+# DB_POSTGRESDB_PORT=5432
+# DB_POSTGRESDB_DATABASE=ten_database_n8n_cua_ban
+# DB_POSTGRESDB_USER=user_pg_cua_ban
+# DB_POSTGRESDB_PASSWORD=mat_khau_pg_cua_ban
 ```
 
 ### 3. Cấu hình Nginx
@@ -30,7 +56,7 @@ Tạo file cấu hình Nginx (ví dụ: `/etc/nginx/conf.d/n8n.conf`):
 ```nginx
 server {
     listen 80;
-    server_name n8n.your-domain.com;
+    server_name n8n.example.com; # Hoặc giá trị của N8N_HOST
     
     # Redirect HTTP to HTTPS
     return 301 https://$server_name$request_uri;
@@ -38,7 +64,7 @@ server {
 
 server {
     listen 443 ssl;
-    server_name n8n.your-domain.com;
+    server_name n8n.example.com; # Hoặc giá trị của N8N_HOST
 
     # SSL configuration
     ssl_certificate /path/to/cert.pem;
@@ -77,7 +103,7 @@ docker-compose logs -f
 
 ### 5. Kiểm tra hoạt động
 
-- Truy cập https://n8n.your-domain.com
+- Truy cập https://n8n.example.com (hoặc domain bạn đã cấu hình trong `N8N_HOST`)
 - Đăng nhập với thông tin mặc định (nếu là lần đầu tiên)
 
 ## Cấu trúc thư mục
@@ -85,9 +111,18 @@ docker-compose logs -f
 ```
 .
 ├── docker-compose.yml    # File cấu hình Docker Compose
-├── .env                 # File biến môi trường
+├── .env                 # File biến môi trường (tạo từ .env.example)
+├── .env.example         # File mẫu biến môi trường
 └── n8n_data            # Thư mục chứa dữ liệu n8n
 ```
+
+### Cấu hình Nâng cao
+File `.env.example` cung cấp nhiều tùy chọn cấu hình nâng cao hơn cho n8n, bao gồm:
+*   **Kết nối Cơ sở dữ liệu:** Hướng dẫn cấu hình n8n để sử dụng cơ sở dữ liệu bên ngoài như PostgreSQL (thay vì SQLite mặc định).
+*   **Cấu hình SMTP:** Thiết lập để n8n có thể gửi email, cần thiết cho các tính năng như quản lý người dùng.
+*   **Task Runners:** Cấu hình để tối ưu hóa việc thực thi workflow.
+
+Hãy tham khảo các bình luận trong file `.env.example` và [tài liệu chính thức của n8n](https://docs.n8n.io/hosting/configuration/environment-variables/) để biết thêm chi tiết về các biến môi trường này.
 
 ## Bảo trì và nâng cấp
 
